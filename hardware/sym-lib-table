@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "esp-grow-light")(type "KiCad")(uri "${KIPRJMOD}/esp-grow-light.kicad_sym")(options "")(descr ""))
+)

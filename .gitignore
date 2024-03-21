@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+#KiCad
+/hardware/esp-grow-light-backups
