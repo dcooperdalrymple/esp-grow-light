@@ -1,0 +1,79 @@
+# Title: ESPHome Plant Grow Light
+# Description: Control a 5V USB grow light with an ESP-01S or similar ESPHome-compatible microcontroller. Automate to fade in at sunrise and fade out at sunset.
+# Author: Cooper Dalrymple
+# Created: 12-07-2022
+# Website: https://dcdalrymple.com/
+# Simple Wiring Description:
+# - If receiving power from 5V USB, use a basic 3.3v power regulator (ie LD1117/L4931) to supply power to ESP microcontroller.
+# - Use an N-MOSFET (ie IRLB8721), darlington transistor (ie TIP120), or relay connected with GPIO pin 2 of the ESP microcontroller. Note: you will not be able to use light component (for fading) with a relay, only use binary_sensor component.
+# - You may need to boost to power going to your MOSFET/transistor since the ESP microcontroller is only capable of driving GPIO at 3.3v. Use a small NPN/PNP transistor to bring the voltage up to 5V on the control line of the driver.
+# - A push button is wired on GPIO pin 0 for manual control. It's also useful for flashing the ESP-01S if you provide serial connections on your board.
+
+esphome:
+  name: grow-light
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret grow_light_api_encryption
+
+ota:
+  password: !secret grow_light_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: !secret grow_light_ap_ssid
+    password: !secret grow_light_ap_password
+
+captive_portal:
+
+# For MOSFET/Transistor (fading)
+light:
+  - platform: monochromatic
+    name: "Grow Light"
+    id: light_0
+    output: pwm_0
+    # Control length of fade in/out at sunrise/sunset
+    default_transition_length: 30s
+
+output:
+  - platform: esp8266_pwm
+    pin: 2
+    id: pwm_0
+    # Configure these settings to best fit your device
+    min_power: 0.0
+    max_power: 1.0
+    # Prevents unnecessary power draw when device is off
+    zero_means_zero: True
+
+# For Relay (no fading)
+#switch:
+#  - platform: gpio
+#    pin: 2
+#    name: "Grow Light"
+#    id: light_0
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: 0
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "Grow Light Button"
+    id: button_0
+    internal: True
+    filters:
+      - delayed_on: 10ms
+    on_press:
+      - light.toggle: light_0 # For MOSFET/Transistor
+      #- switch.toggle: light_0 # For Relay
